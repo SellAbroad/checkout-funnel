@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { checkoutSessions, checkoutEvents } from "../db/schema.js";
 import { parseEventBody } from "../lib/parse-event.js";
@@ -29,73 +29,55 @@ events.post("/", async (c) => {
   const { event, cart_id, merchant_id, timestamp, ...rest } = parsed;
   const metadata = Object.keys(rest).length > 0 ? rest : null;
 
-  const existing = await db
-    .select({ id: checkoutSessions.id, maxStepReached: checkoutSessions.maxStepReached })
-    .from(checkoutSessions)
-    .where(eq(checkoutSessions.cartId, cart_id))
-    .limit(1);
-
-  let sessionId: string;
-
-  if (existing.length > 0) {
-    sessionId = existing[0].id;
-    const updateFields: Record<string, unknown> = {
+  const [session] = await db
+    .insert(checkoutSessions)
+    .values({
+      cartId: cart_id,
+      merchantId: merchant_id,
+      claritySessionId: parsed.clarity_session_id ?? null,
+      currencyCode: parsed.currency_code ?? null,
+      cartAmountCents: parsed.cart_amount_cents ?? null,
+      countryCode: parsed.country_code ?? null,
+      deviceType: parsed.device_type ?? null,
+      userAgent: c.req.header("user-agent") ?? null,
+      shopUrl: parsed.shop_url ?? null,
+      firstEventAt: now,
       lastEventAt: now,
-    };
-
-    if (stepOrder > existing[0].maxStepReached) {
-      updateFields.maxStepReached = stepOrder;
-    }
-    if (isCompleted) {
-      updateFields.isCompleted = true;
-    }
-    if (parsed.clarity_session_id) {
-      updateFields.claritySessionId = parsed.clarity_session_id;
-    }
-    if (parsed.currency_code) {
-      updateFields.currencyCode = parsed.currency_code;
-    }
-    if (parsed.cart_amount_cents != null) {
-      updateFields.cartAmountCents = parsed.cart_amount_cents;
-    }
-    if (parsed.country_code) {
-      updateFields.countryCode = parsed.country_code;
-    }
-    if (parsed.shop_url) {
-      updateFields.shopUrl = parsed.shop_url;
-    }
-    if (parsed.device_type) {
-      updateFields.deviceType = parsed.device_type;
-    }
-
-    await db
-      .update(checkoutSessions)
-      .set(updateFields)
-      .where(eq(checkoutSessions.id, sessionId));
-  } else {
-    const [session] = await db
-      .insert(checkoutSessions)
-      .values({
-        cartId: cart_id,
-        merchantId: merchant_id,
-        claritySessionId: parsed.clarity_session_id ?? null,
-        currencyCode: parsed.currency_code ?? null,
-        cartAmountCents: parsed.cart_amount_cents ?? null,
-        countryCode: parsed.country_code ?? null,
-        deviceType: parsed.device_type ?? null,
-        userAgent: c.req.header("user-agent") ?? null,
-        shopUrl: parsed.shop_url ?? null,
-        firstEventAt: now,
+      maxStepReached: stepOrder,
+      isCompleted,
+    })
+    .onConflictDoUpdate({
+      target: checkoutSessions.cartId,
+      set: {
         lastEventAt: now,
-        maxStepReached: stepOrder,
-        isCompleted,
-      })
-      .returning({ id: checkoutSessions.id });
-    sessionId = session.id;
-  }
+        maxStepReached: sql`GREATEST(${checkoutSessions.maxStepReached}, ${stepOrder})`,
+        isCompleted: isCompleted
+          ? sql`TRUE`
+          : sql`${checkoutSessions.isCompleted}`,
+        claritySessionId: parsed.clarity_session_id
+          ? sql`${parsed.clarity_session_id}`
+          : sql`${checkoutSessions.claritySessionId}`,
+        currencyCode: parsed.currency_code
+          ? sql`${parsed.currency_code}`
+          : sql`${checkoutSessions.currencyCode}`,
+        cartAmountCents: parsed.cart_amount_cents != null
+          ? sql`${parsed.cart_amount_cents}`
+          : sql`${checkoutSessions.cartAmountCents}`,
+        countryCode: parsed.country_code
+          ? sql`${parsed.country_code}`
+          : sql`${checkoutSessions.countryCode}`,
+        shopUrl: parsed.shop_url
+          ? sql`${parsed.shop_url}`
+          : sql`${checkoutSessions.shopUrl}`,
+        deviceType: parsed.device_type
+          ? sql`${parsed.device_type}`
+          : sql`${checkoutSessions.deviceType}`,
+      },
+    })
+    .returning({ id: checkoutSessions.id });
 
   await db.insert(checkoutEvents).values({
-    sessionId,
+    sessionId: session.id,
     eventName: event,
     stepOrder,
     metadata,

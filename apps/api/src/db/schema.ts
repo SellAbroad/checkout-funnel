@@ -8,6 +8,7 @@ import {
   timestamp,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const checkoutSessions = pgTable(
@@ -30,9 +31,9 @@ export const checkoutSessions = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
+    uniqueIndex("idx_sessions_cart_unique").on(t.cartId),
     index("idx_sessions_merchant").on(t.merchantId),
     index("idx_sessions_created").on(t.createdAt),
-    index("idx_sessions_cart").on(t.cartId),
     index("idx_sessions_step").on(t.maxStepReached),
   ],
 );

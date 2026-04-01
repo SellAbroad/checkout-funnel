@@ -68,14 +68,37 @@ Set `VITE_API_URL=http://localhost:3100` in `apps/dashboard/.env`.
 
 ### 3. Deploy the Dashboard
 
-1. Click "New" > "GitHub Repo" > select `checkout-funnel` again
-2. In Settings:
-   - **Root Directory**: `apps/dashboard`
+The dashboard is a static Vite build; `VITE_*` variables must exist **at build time** (they are baked into the JS).
+
+#### Option A: Railway CLI (same project as API)
+
+1. In the Railway project (e.g. `chk-api`), click **+ New** > **Empty service** and name it (e.g. `checkout-funnel-dashboard`).
+2. Locally:
+   ```bash
+   cd apps/dashboard
+   railway link          # same project; select the **dashboard** service (not Postgres, not API)
+   railway variable set VITE_API_URL=https://stellar-determination-production-736e.up.railway.app
+   railway variable set VITE_CLARITY_PROJECT_ID=your-clarity-project-id
+   ```
+   Optional: leave `VITE_CLARITY_PROJECT_ID` empty if you do not need Clarity replay links in the table.
+3. **Dockerfile** (recommended): in the dashboard service **Settings** > **Build** > **Dockerfile path**: `Dockerfile`, **Root Directory**: `apps/dashboard` (if deploying from monorepo repo). Or run `railway up` from `apps/dashboard` after linking so the upload context is this folder.
+4. Ensure variables used during Docker build are available: in Railway **Variables**, add `VITE_API_URL` (and optional `VITE_CLARITY_PROJECT_ID`). If the UI offers **"Build"** scope / "Available at build time", enable it for these keys.
+5. Deploy: **Deploy** from the UI or `railway up` from `apps/dashboard`.
+6. **Networking** > **Generate Domain** for the dashboard service. Open the URL in the browser.
+
+#### Option B: GitHub (when repo is connected)
+
+1. New service from repo `checkout-funnel`
+2. **Root Directory**: `apps/dashboard`
+3. Use **Dockerfile** or:
    - **Build Command**: `npm ci && npm run build`
-   - **Start Command**: `npx serve dist -s -l 80` (or use the Dockerfile)
-3. Add build-time variables:
-   - `VITE_API_URL` = (your API service public URL, e.g., `https://checkout-funnel-api-production.up.railway.app`)
-   - `VITE_CLARITY_PROJECT_ID` = (your Clarity project ID, for session replay links)
+   - **Start Command**: `npx --yes serve@14 dist -s -l $PORT`
+4. Set `VITE_API_URL` and optional `VITE_CLARITY_PROJECT_ID` (build-time)
+5. Generate public domain
+
+#### CORS on the API
+
+After the dashboard has a URL, set the API `CORS_ORIGIN` to that URL (or keep `*` for internal tools only).
 
 ### 4. Configure zonaapp
 

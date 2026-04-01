@@ -145,14 +145,14 @@ export default function SessionsTable({
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  {s.claritySessionId && clarityProjectId ? (
+                  {clarityProjectId ? (
                     <a
-                      href={`https://clarity.microsoft.com/project/${clarityProjectId}/session/${s.claritySessionId}`}
+                      href={`https://clarity.microsoft.com/projects/view/${clarityProjectId}/impressions?URL=2%3B2%3B${s.cartId}&date=Last%2060%20days`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-indigo-400 hover:text-indigo-300 text-xs underline"
                     >
-                      Watch
+                      View
                     </a>
                   ) : (
                     <span className="text-gray-600 text-xs">-</span>
