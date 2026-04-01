@@ -11,7 +11,7 @@ app.use(
   "*",
   cors({
     origin: process.env.CORS_ORIGIN ?? "*",
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type"],
   }),
 );

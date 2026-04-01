@@ -1,8 +1,10 @@
 import { Hono } from "hono";
-import { sql, eq, and, gte, lte, desc } from "drizzle-orm";
+import { sql, eq, ne, and, gte, lte, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { checkoutSessions, checkoutEvents } from "../db/schema.js";
 import { STEP_LABELS, FUNNEL_STEPS } from "../lib/step-order.js";
+
+const EXCLUDED_MERCHANT_IDS = ["01KE79ZTMNNC5S72FGJRYW43QB"];
 
 const analytics = new Hono();
 
@@ -11,7 +13,9 @@ analytics.get("/funnel", async (c) => {
   const from = c.req.query("from");
   const to = c.req.query("to");
 
-  const conditions = [];
+  const conditions = EXCLUDED_MERCHANT_IDS.map((id) =>
+    ne(checkoutSessions.merchantId, id),
+  );
   if (merchantId) {
     conditions.push(eq(checkoutSessions.merchantId, merchantId));
   }
@@ -72,7 +76,9 @@ analytics.get("/sessions", async (c) => {
   const limit = Math.min(parseInt(c.req.query("limit") ?? "50", 10), 200);
   const offset = parseInt(c.req.query("offset") ?? "0", 10);
 
-  const conditions = [];
+  const conditions = EXCLUDED_MERCHANT_IDS.map((id) =>
+    ne(checkoutSessions.merchantId, id),
+  );
   if (merchantId) {
     conditions.push(eq(checkoutSessions.merchantId, merchantId));
   }
@@ -131,6 +137,10 @@ analytics.get("/sessions/:id/events", async (c) => {
 });
 
 analytics.get("/merchants", async (c) => {
+  const excludeConditions = EXCLUDED_MERCHANT_IDS.map((id) =>
+    ne(checkoutSessions.merchantId, id),
+  );
+
   const rows = await db
     .select({
       merchantId: checkoutSessions.merchantId,
@@ -138,6 +148,7 @@ analytics.get("/merchants", async (c) => {
       sessionCount: sql<number>`count(*)::int`,
     })
     .from(checkoutSessions)
+    .where(and(...excludeConditions))
     .groupBy(checkoutSessions.merchantId)
     .orderBy(sql`count(*) DESC`);
 
@@ -149,7 +160,9 @@ analytics.get("/stats", async (c) => {
   const from = c.req.query("from");
   const to = c.req.query("to");
 
-  const conditions = [];
+  const conditions = EXCLUDED_MERCHANT_IDS.map((id) =>
+    ne(checkoutSessions.merchantId, id),
+  );
   if (merchantId) {
     conditions.push(eq(checkoutSessions.merchantId, merchantId));
   }
@@ -204,6 +217,15 @@ analytics.get("/stats", async (c) => {
         }
       : null,
   });
+});
+
+analytics.delete("/sessions/:id", async (c) => {
+  const sessionId = c.req.param("id");
+
+  await db.delete(checkoutEvents).where(eq(checkoutEvents.sessionId, sessionId));
+  await db.delete(checkoutSessions).where(eq(checkoutSessions.id, sessionId));
+
+  return c.json({ ok: true });
 });
 
 export default analytics;

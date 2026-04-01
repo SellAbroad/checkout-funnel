@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import type { SessionsResponse, SessionEvent } from "../lib/api";
-import { fetchSessionEvents } from "../lib/api";
+import { fetchSessionEvents, deleteSession } from "../lib/api";
 
 interface Props {
   sessions: SessionsResponse | null;
@@ -9,6 +9,7 @@ interface Props {
   page: number;
   setPage: (p: number) => void;
   clarityProjectId?: string;
+  onDeleted?: () => void;
 }
 
 function formatAmount(cents: number | null, currency: string | null): string {
@@ -70,13 +71,48 @@ function SessionEventsPanel({ sessionId }: { sessionId: string }) {
   );
 }
 
+function TrashIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  );
+}
+
 export default function SessionsTable({
   sessions,
   loading,
   page,
   setPage,
   clarityProjectId,
+  onDeleted,
 }: Props) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (sessionId: string) => {
+    if (!confirm("Delete this session and all its events?")) return;
+    setDeletingId(sessionId);
+    try {
+      await deleteSession(sessionId);
+      onDeleted?.();
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (loading || !sessions) {
     return (
       <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 h-64 animate-pulse" />
@@ -105,6 +141,7 @@ export default function SessionsTable({
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Clarity</th>
               <th className="px-4 py-3 font-medium">Details</th>
+              <th className="px-4 py-3 font-medium w-8"></th>
             </tr>
           </thead>
           <tbody>
@@ -161,11 +198,21 @@ export default function SessionsTable({
                 <td className="px-4 py-3">
                   <SessionEventsPanel sessionId={s.id} />
                 </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    disabled={deletingId === s.id}
+                    className="text-gray-600 hover:text-red-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Delete session"
+                  >
+                    <TrashIcon />
+                  </button>
+                </td>
               </tr>
             ))}
             {sessions.sessions.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                   No sessions found
                 </td>
               </tr>

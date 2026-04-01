@@ -102,3 +102,9 @@ export function fetchStats(params?: Record<string, string>) {
 export function fetchMerchants() {
   return fetchJson<MerchantsResponse>("/analytics/merchants");
 }
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  const url = new URL(`/analytics/sessions/${sessionId}`, API_URL);
+  const res = await fetch(url.toString(), { method: "DELETE" });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+}

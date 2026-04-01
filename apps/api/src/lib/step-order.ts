@@ -18,7 +18,7 @@ export const STEP_LABELS: Record<number, string> = {
   1: "Checkout Loaded",
   2: "Prices Ready",
   3: "Shipping Shown",
-  4: "Shipping Selected",
+  4: "Address Selected",
   5: "Discount",
   6: "Payment Shown",
   7: "Pay Clicked",

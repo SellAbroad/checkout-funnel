@@ -62,6 +62,7 @@ export default function App() {
           page={page}
           setPage={setPage}
           clarityProjectId={CLARITY_PROJECT_ID}
+          onDeleted={reload}
         />
       </main>
     </div>
