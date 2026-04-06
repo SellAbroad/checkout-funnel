@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { sql, eq, ne, and, gte, lte, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
 import { checkoutSessions, checkoutEvents } from "../db/schema.js";
-import { STEP_LABELS, FUNNEL_STEPS } from "../lib/step-order.js";
+import { STEP_LABELS, FUNNEL_DEFINITION, SIDE_METRIC_EVENTS } from "../lib/step-order.js";
 
 const EXCLUDED_MERCHANT_IDS = ["01KE79ZTMNNC5S72FGJRYW43QB"];
 
@@ -28,41 +28,61 @@ analytics.get("/funnel", async (c) => {
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const rows = await db
+  // Event-based funnel: each step counts distinct sessions that had that specific event.
+  // shipping_empty is excluded from the funnel bars and tracked as a side metric instead.
+  const [row] = await db
     .select({
-      step: checkoutSessions.maxStepReached,
-      count: sql<number>`count(*)::int`,
+      totalSessions: sql<number>`COUNT(DISTINCT ${checkoutSessions.id})::int`,
+      loaded:           sql<number>`COUNT(DISTINCT CASE WHEN ${checkoutEvents.eventName} = 'sa_checkout_loaded'           THEN ${checkoutSessions.id} END)::int`,
+      prices_ready:     sql<number>`COUNT(DISTINCT CASE WHEN ${checkoutEvents.eventName} = 'sa_checkout_prices_ready'     THEN ${checkoutSessions.id} END)::int`,
+      shipping_shown:   sql<number>`COUNT(DISTINCT CASE WHEN ${checkoutEvents.eventName} = 'sa_checkout_shipping_shown'   THEN ${checkoutSessions.id} END)::int`,
+      address_selected: sql<number>`COUNT(DISTINCT CASE WHEN ${checkoutEvents.eventName} = 'sa_checkout_address_selected' THEN ${checkoutSessions.id} END)::int`,
+      pay_clicked:      sql<number>`COUNT(DISTINCT CASE WHEN ${checkoutEvents.eventName} = 'sa_checkout_pay_clicked'      THEN ${checkoutSessions.id} END)::int`,
+      completed:        sql<number>`COUNT(DISTINCT CASE WHEN ${checkoutEvents.eventName} = 'sa_checkout_completed'        THEN ${checkoutSessions.id} END)::int`,
+      shippingEmpty:    sql<number>`COUNT(DISTINCT CASE WHEN ${checkoutEvents.eventName} = ${SIDE_METRIC_EVENTS.shippingEmpty} THEN ${checkoutSessions.id} END)::int`,
+      paymentError:     sql<number>`COUNT(DISTINCT CASE WHEN ${checkoutEvents.eventName} = ${SIDE_METRIC_EVENTS.paymentError}  THEN ${checkoutSessions.id} END)::int`,
     })
     .from(checkoutSessions)
-    .where(whereClause)
-    .groupBy(checkoutSessions.maxStepReached);
+    .leftJoin(checkoutEvents, eq(checkoutEvents.sessionId, checkoutSessions.id))
+    .where(whereClause);
 
-  const totalSessions = rows.reduce((sum, r) => sum + r.count, 0);
+  const totalSessions = row?.totalSessions ?? 0;
 
-  const cumulativeCounts: Record<number, number> = {};
-  for (const step of FUNNEL_STEPS) {
-    cumulativeCounts[step] = rows
-      .filter((r) => r.step >= step)
-      .reduce((sum, r) => sum + r.count, 0);
-  }
+  const counts: Record<string, number> = {
+    loaded:           row?.loaded ?? 0,
+    prices_ready:     row?.prices_ready ?? 0,
+    shipping_shown:   row?.shipping_shown ?? 0,
+    address_selected: row?.address_selected ?? 0,
+    pay_clicked:      row?.pay_clicked ?? 0,
+    completed:        row?.completed ?? 0,
+  };
 
-  const funnel = FUNNEL_STEPS.map((step, i) => {
-    const count = cumulativeCounts[step] ?? 0;
-    const prevCount = i > 0 ? (cumulativeCounts[FUNNEL_STEPS[i - 1]] ?? 0) : totalSessions;
+  const funnel = FUNNEL_DEFINITION.map((step, i) => {
+    const count = counts[step.key] ?? 0;
+    const prevCount = i > 0 ? (counts[FUNNEL_DEFINITION[i - 1].key] ?? 0) : totalSessions;
     const dropoffRate = prevCount > 0 ? ((prevCount - count) / prevCount) * 100 : 0;
 
     return {
-      step,
-      label: STEP_LABELS[step],
+      step: i + 1,
+      label: step.label,
       count,
       percentOfTotal: totalSessions > 0 ? (count / totalSessions) * 100 : 0,
       dropoffRate: Math.round(dropoffRate * 10) / 10,
     };
   });
 
+  const shippingEmptyCount = row?.shippingEmpty ?? 0;
+  const paymentErrorCount  = row?.paymentError  ?? 0;
+
   return c.json({
     totalSessions,
     funnel,
+    sideMetrics: {
+      shippingEmpty:     shippingEmptyCount,
+      shippingEmptyRate: totalSessions > 0 ? Math.round((shippingEmptyCount / totalSessions) * 1000) / 10 : 0,
+      paymentErrors:     paymentErrorCount,
+      paymentErrorRate:  totalSessions > 0 ? Math.round((paymentErrorCount  / totalSessions) * 1000) / 10 : 0,
+    },
     filters: { merchantId, from, to },
   });
 });
