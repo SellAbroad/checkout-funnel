@@ -52,7 +52,7 @@ export default function App() {
           onReload={reload}
         />
 
-        <StatsCards stats={stats} loading={loading} />
+        <StatsCards stats={stats} sideMetrics={funnel?.sideMetrics ?? null} loading={loading} />
 
         <FunnelChart funnel={funnel} loading={loading} />
 

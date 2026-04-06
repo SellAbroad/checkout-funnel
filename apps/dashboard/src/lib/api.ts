@@ -20,9 +20,17 @@ export interface FunnelStep {
   dropoffRate: number;
 }
 
+export interface FunnelSideMetrics {
+  shippingEmpty: number;
+  shippingEmptyRate: number;
+  paymentErrors: number;
+  paymentErrorRate: number;
+}
+
 export interface FunnelResponse {
   totalSessions: number;
   funnel: FunnelStep[];
+  sideMetrics: FunnelSideMetrics;
   filters: { merchantId: string | null; from: string | null; to: string | null };
 }
 
