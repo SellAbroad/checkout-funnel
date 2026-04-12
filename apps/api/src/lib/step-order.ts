@@ -7,6 +7,7 @@ export const STEP_ORDER: Record<string, number> = {
   sa_checkout_shipping_empty: 3,
   sa_checkout_shipping_selected: 4,
   sa_checkout_tax_shown: 4,
+  sa_checkout_address_focused: 4,
   sa_checkout_address_selected: 5,
   sa_checkout_discount_applied: 6,
   sa_checkout_discount_failed: 6,
