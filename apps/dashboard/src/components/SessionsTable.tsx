@@ -63,12 +63,12 @@ function SessionEventsPanel({ sessionId }: { sessionId: string }) {
               >
                 {ev.eventName.replace("sa_checkout_", "")}
               </span>
-              {ev.metadata?.error_message && (
+              {!!ev.metadata?.error_message && (
                 <span className="text-red-300 italic truncate max-w-[240px]" title={String(ev.metadata.error_message)}>
                   {String(ev.metadata.error_message)}
                 </span>
               )}
-              {ev.metadata?.sentry_event_id && (
+              {!!ev.metadata?.sentry_event_id && (
                 <a
                   href={`https://sentry.io/organizations/sellabroad/issues/?query=id:${ev.metadata.sentry_event_id}`}
                   target="_blank"
