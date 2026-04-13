@@ -125,7 +125,7 @@ analytics.get("/sessions", async (c) => {
     conditions.push(lte(checkoutSessions.createdAt, new Date(to)));
   }
   if (maxStep) {
-    conditions.push(eq(checkoutSessions.maxStepReached, parseInt(maxStep, 10)));
+    conditions.push(lte(checkoutSessions.maxStepReached, parseInt(maxStep, 10)));
   }
   if (completedOnly === "true") {
     conditions.push(eq(checkoutSessions.isCompleted, true));
@@ -164,29 +164,40 @@ analytics.get("/sessions", async (c) => {
   }));
 
   if (productionDb && enrichedSessions.length > 0) {
-    const merchantIds = [...new Set(enrichedSessions.map((s) => s.merchantId))];
+    try {
+      const merchantIds = [...new Set(enrichedSessions.map((s) => s.merchantId))];
 
-    // Get merchant names from both shopify_store and woocommerce_store
-    const [shopifyNames, woocommerceNames] = await Promise.all([
-      productionDb
-        .select({ merchantId: shopifyStore.merchantId, storeName: shopifyStore.storeName })
-        .from(shopifyStore)
-        .where(inArray(shopifyStore.merchantId, merchantIds)),
-      productionDb
-        .select({ merchantId: woocommerceStore.merchantId, storeName: woocommerceStore.storeName })
-        .from(woocommerceStore)
-        .where(inArray(woocommerceStore.merchantId, merchantIds)),
-    ]);
+      // Get merchant names from both shopify_store and woocommerce_store
+      const [shopifyNames, woocommerceNames] = await Promise.all([
+        productionDb
+          .select({ merchantId: shopifyStore.merchantId, storeName: shopifyStore.storeName })
+          .from(shopifyStore)
+          .where(inArray(shopifyStore.merchantId, merchantIds))
+          .catch(() => []),
+        productionDb
+          .select({ merchantId: woocommerceStore.merchantId, storeName: woocommerceStore.storeName })
+          .from(woocommerceStore)
+          .where(inArray(woocommerceStore.merchantId, merchantIds))
+          .catch(() => []),
+      ]);
 
-    // Merge both lists (shopify takes precedence if both exist)
-    const nameMap = new Map<string, string>();
-    woocommerceNames.forEach((row) => nameMap.set(row.merchantId, row.storeName));
-    shopifyNames.forEach((row) => nameMap.set(row.merchantId, row.storeName));
+      // Merge both lists (shopify takes precedence if both exist)
+      const nameMap = new Map<string, string>();
+      if (Array.isArray(woocommerceNames)) {
+        woocommerceNames.forEach((row: any) => nameMap.set(row.merchant_id, row.store_name));
+      }
+      if (Array.isArray(shopifyNames)) {
+        shopifyNames.forEach((row: any) => nameMap.set(row.merchant_id, row.store_name));
+      }
 
-    enrichedSessions = enrichedSessions.map((s) => ({
-      ...s,
-      merchantName: nameMap.get(s.merchantId),
-    }));
+      enrichedSessions = enrichedSessions.map((s) => ({
+        ...s,
+        merchantName: nameMap.get(s.merchantId),
+      }));
+    } catch (error) {
+      console.error("Failed to fetch merchant names from production DB:", error);
+      // Continue without merchant names if lookup fails
+    }
   }
 
   return c.json({
