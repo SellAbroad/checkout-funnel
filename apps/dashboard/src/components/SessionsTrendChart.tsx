@@ -14,7 +14,6 @@ import {
   type SessionsOverTimePoint,
   type MerchantRow,
 } from "../lib/api";
-import { getMerchantName } from "../lib/merchants-map";
 import TodayHourlyChart from "./TodayHourlyChart";
 import ProductionTodayChart from "./ProductionTodayChart";
 import ProductionCartsTodayChart from "./ProductionCartsTodayChart";
@@ -26,6 +25,10 @@ interface Props {
   merchants: MerchantRow[];
   from: string;
   to: string;
+}
+
+function getMerchantName(merchant: MerchantRow): string {
+  return merchant.storeName || merchant.merchantId;
 }
 
 function formatDate(dateStr: string): string {
@@ -88,7 +91,7 @@ export default function SessionsTrendChart({ merchants, from, to }: Props) {
     if (!initialized.current && merchants.length > 0) {
       const defaultIds = merchants
         .filter((m) => {
-          const name = getMerchantName(m.merchantId, m.shopUrl).toLowerCase();
+          const name = getMerchantName(m).toLowerCase();
           const shopUrl = (m.shopUrl ?? "").toLowerCase();
           // For genetra, match only .io — exclude .co.uk
           if (shopUrl.includes("genetra")) return shopUrl.includes("genetra.io");
@@ -146,8 +149,8 @@ export default function SessionsTrendChart({ merchants, from, to }: Props) {
   const deselectAll = () => setSelectedIds(new Set());
 
   const sortedMerchants = [...merchants].sort((a, b) => {
-    const nameA = getMerchantName(a.merchantId, a.shopUrl);
-    const nameB = getMerchantName(b.merchantId, b.shopUrl);
+    const nameA = getMerchantName(a);
+    const nameB = getMerchantName(b);
     return nameA.localeCompare(nameB);
   });
 
@@ -194,7 +197,7 @@ export default function SessionsTrendChart({ merchants, from, to }: Props) {
         {/* Merchant chips */}
         <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto flex-1">
           {sortedMerchants.map((m) => {
-            const name = getMerchantName(m.merchantId, m.shopUrl);
+            const name = getMerchantName(m);
             const checked = selectedIds.has(m.merchantId);
             return (
               <button
@@ -215,7 +218,7 @@ export default function SessionsTrendChart({ merchants, from, to }: Props) {
 
       {/* 1. Sessions / ATC / Visitors (DynamoDB) */}
       <DynamoTodayChart
-        merchants={merchants.map((m) => ({ id: m.merchantId, name: getMerchantName(m.merchantId, m.shopUrl) }))}
+        merchants={merchants.map((m) => ({ id: m.merchantId, name: getMerchantName(m) }))}
         timezone={timezone}
         controlledSelectedIds={selectedIdsArray}
       />

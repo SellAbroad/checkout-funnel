@@ -11,12 +11,15 @@ import {
   ReferenceLine,
 } from "recharts";
 import { fetchMonthlyGrowth, type MerchantRow, type MonthlyGrowthResponse } from "../lib/api";
-import { getMerchantName } from "../lib/merchants-map";
 
 type Timezone = "UTC" | "Asia/Dubai";
 
 interface Props {
   merchants: MerchantRow[];
+}
+
+function getMerchantName(merchant: MerchantRow): string {
+  return merchant.storeName || merchant.merchantId;
 }
 
 function formatUsd(value: number): string {
@@ -61,7 +64,7 @@ export default function MonthlyGrowthChart({ merchants }: Props) {
     if (!initialized.current && merchants.length > 0) {
       const defaultIds = merchants
         .filter((m) => {
-          const name = getMerchantName(m.merchantId, m.shopUrl).toLowerCase();
+          const name = getMerchantName(m).toLowerCase();
           const shopUrl = (m.shopUrl ?? "").toLowerCase();
           if (shopUrl.includes("genetra")) return shopUrl.includes("genetra.io");
           return DEFAULT_SELECTED_NAMES.some((n) => name.includes(n) || shopUrl.includes(n));
@@ -114,7 +117,7 @@ export default function MonthlyGrowthChart({ merchants }: Props) {
   const deselectAll = () => setSelectedIds(new Set());
 
   const sortedMerchants = [...merchants].sort((a, b) =>
-    getMerchantName(a.merchantId, a.shopUrl).localeCompare(getMerchantName(b.merchantId, b.shopUrl)),
+    getMerchantName(a).localeCompare(getMerchantName(b)),
   );
 
   const chartRows = data ? buildChartRows(data) : [];
@@ -160,7 +163,7 @@ export default function MonthlyGrowthChart({ merchants }: Props) {
 
         <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto flex-1">
           {sortedMerchants.map((m) => {
-            const name = getMerchantName(m.merchantId, m.shopUrl);
+            const name = getMerchantName(m);
             const checked = selectedIds.has(m.merchantId);
             return (
               <button

@@ -76,6 +76,7 @@ export interface MerchantRow {
   merchantId: string;
   shopUrl: string | null;
   sessionCount: number;
+  storeName: string | null;
 }
 
 export interface MerchantsResponse {

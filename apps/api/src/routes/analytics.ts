@@ -187,7 +187,8 @@ analytics.get("/merchants", async (c) => {
     ne(checkoutSessions.merchantId, id),
   );
 
-  const rows = await db
+  // Get merchants from checkout sessions with their names from production DB
+  const merchantsWithNames = await db
     .select({
       merchantId: checkoutSessions.merchantId,
       shopUrl: sql<string>`MAX(${checkoutSessions.shopUrl})`,
@@ -198,7 +199,32 @@ analytics.get("/merchants", async (c) => {
     .groupBy(checkoutSessions.merchantId)
     .orderBy(sql`count(*) DESC`);
 
-  return c.json({ merchants: rows });
+  // Enrich with store names from production database
+  const enriched = await Promise.all(
+    merchantsWithNames.map(async (merchant) => {
+      // Try shopify_store first
+      const shopifyResult = await productionDb
+        .select({ storeName: shopifyStore.storeName })
+        .from(shopifyStore)
+        .where(eq(shopifyStore.merchantId, merchant.merchantId))
+        .limit(1);
+
+      if (shopifyResult.length > 0) {
+        return { ...merchant, storeName: shopifyResult[0].storeName };
+      }
+
+      // Try woocommerce_store if not found in shopify
+      const wooResult = await productionDb
+        .select({ storeName: woocommerceStore.storeName })
+        .from(woocommerceStore)
+        .where(eq(woocommerceStore.merchantId, merchant.merchantId))
+        .limit(1);
+
+      return { ...merchant, storeName: wooResult[0]?.storeName || null };
+    })
+  );
+
+  return c.json({ merchants: enriched });
 });
 
 analytics.get("/stats", async (c) => {

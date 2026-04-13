@@ -101,6 +101,7 @@ export default function App() {
 
             <SessionsTable
               sessions={sessions}
+              merchants={merchants?.merchants ?? null}
               loading={loading}
               page={page}
               setPage={setPage}

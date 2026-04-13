@@ -1,6 +1,5 @@
 import type { Filters as FiltersType } from "../hooks/useAnalytics";
 import type { MerchantsResponse } from "../lib/api";
-import { getMerchantName } from "../lib/merchants-map";
 
 interface Props {
   filters: FiltersType;
@@ -34,7 +33,7 @@ export default function Filters({ filters, setFilters, merchants, onReload }: Pr
           <option value="">All Merchants</option>
           {merchants?.merchants.map((m) => (
             <option key={m.merchantId} value={m.merchantId}>
-              {getMerchantName(m.merchantId, m.shopUrl)} ({m.sessionCount})
+              {m.storeName || m.merchantId} ({m.sessionCount})
             </option>
           ))}
         </select>

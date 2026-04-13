@@ -1,16 +1,22 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import type { SessionsResponse, SessionEvent } from "../lib/api";
+import type { SessionsResponse, SessionEvent, MerchantRow } from "../lib/api";
 import { fetchSessionEvents, deleteSession } from "../lib/api";
-import { getMerchantName } from "../lib/merchants-map";
 
 interface Props {
   sessions: SessionsResponse | null;
+  merchants: MerchantRow[] | null;
   loading: boolean;
   page: number;
   setPage: (p: number) => void;
   clarityProjectId?: string;
   onDeleted?: () => void;
+}
+
+function getMerchantDisplayName(merchantId: string, merchants: MerchantRow[] | null): string {
+  if (!merchants) return merchantId;
+  const merchant = merchants.find((m) => m.merchantId === merchantId);
+  return merchant?.storeName || merchantId;
 }
 
 function formatAmount(cents: number | null, currency: string | null): string {
@@ -171,8 +177,8 @@ export default function SessionsTable({
                 <td className="px-4 py-3 text-gray-300 whitespace-nowrap">
                   {format(new Date(s.createdAt), "MMM dd, HH:mm")}
                 </td>
-                <td className="px-4 py-3 text-gray-400 text-sm max-w-[200px] truncate" title={getMerchantName(s.merchantId)}>
-                  {getMerchantName(s.merchantId)}
+                <td className="px-4 py-3 text-gray-400 text-sm max-w-[200px] truncate" title={getMerchantDisplayName(s.merchantId, merchants)}>
+                  {getMerchantDisplayName(s.merchantId, merchants)}
                 </td>
                 <td className="px-4 py-3 text-gray-400 font-mono text-xs">
                   {s.cartId.substring(0, 16)}...
