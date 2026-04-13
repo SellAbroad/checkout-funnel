@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_URL } from "../lib/api";
 
 export default function ConfigMenu() {
   const [open, setOpen] = useState(false);
@@ -10,7 +11,8 @@ export default function ConfigMenu() {
     setMessage(null);
 
     try {
-      const response = await fetch("/api/admin/update-merchants", {
+      const url = new URL("/admin/update-merchants", API_URL);
+      const response = await fetch(url.toString(), {
         method: "POST",
       });
 

@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
+export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3100";
 
 async function fetchJson<T>(path: string, params?: Record<string, string>): Promise<T> {
   const url = new URL(path, API_URL);
