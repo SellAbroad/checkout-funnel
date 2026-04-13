@@ -6,6 +6,7 @@ import events from "./routes/events.js";
 import analytics from "./routes/analytics.js";
 import productionAnalytics from "./routes/production-analytics.js";
 import dynamoAnalytics from "./routes/dynamodb-analytics.js";
+import admin from "./routes/admin.js";
 
 const app = new Hono();
 
@@ -23,6 +24,7 @@ app.route("/events", events);
 app.route("/analytics", analytics);
 app.route("/production-analytics", productionAnalytics);
 app.route("/dynamodb-analytics", dynamoAnalytics);
+app.route("/api/admin", admin);
 
 const port = parseInt(process.env.PORT ?? "3100", 10);
 

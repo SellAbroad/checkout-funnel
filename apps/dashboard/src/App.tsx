@@ -6,6 +6,7 @@ import SessionsTable from "./components/SessionsTable";
 import Filters from "./components/Filters";
 import SessionsTrendChart from "./components/SessionsTrendChart";
 import MonthlyGrowthChart from "./components/MonthlyGrowthChart";
+import ConfigMenu from "./components/ConfigMenu";
 
 const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID ?? "";
 
@@ -36,12 +37,15 @@ export default function App() {
             <h1 className="text-xl font-bold text-white">Checkout Funnel</h1>
             <p className="text-sm text-gray-500">SellAbroad checkout analytics</p>
           </div>
-          <button
-            onClick={reload}
-            className="text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            Refresh
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={reload}
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Refresh
+            </button>
+            <ConfigMenu />
+          </div>
         </div>
       </header>
 
