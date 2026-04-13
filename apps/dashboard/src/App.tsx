@@ -1,12 +1,19 @@
+import { useState } from "react";
 import { useAnalytics } from "./hooks/useAnalytics";
 import StatsCards from "./components/StatsCards";
 import FunnelChart from "./components/FunnelChart";
 import SessionsTable from "./components/SessionsTable";
 import Filters from "./components/Filters";
+import SessionsTrendChart from "./components/SessionsTrendChart";
+import MonthlyGrowthChart from "./components/MonthlyGrowthChart";
 
 const CLARITY_PROJECT_ID = import.meta.env.VITE_CLARITY_PROJECT_ID ?? "";
 
+type Tab = "overview" | "trends" | "monthly-growth";
+
 export default function App() {
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
+
   const {
     filters,
     setFilters,
@@ -52,18 +59,62 @@ export default function App() {
           onReload={reload}
         />
 
-        <StatsCards stats={stats} sideMetrics={funnel?.sideMetrics ?? null} loading={loading} />
+        <div className="flex gap-1 border-b border-gray-800">
+          {(["overview", "trends", "monthly-growth"] as Tab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === tab
+                  ? "border-indigo-500 text-white"
+                  : "border-transparent text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              {tab === "overview" ? "Overview" : tab === "trends" ? "Trends" : "Monthly Growth"}
+            </button>
+          ))}
+        </div>
 
-        <FunnelChart funnel={funnel} loading={loading} />
+        {activeTab === "overview" && (
+          <>
+            <StatsCards
+              stats={stats}
+              sideMetrics={funnel?.sideMetrics ?? null}
+              loading={loading}
+              paymentErrorFilterActive={filters.hasPaymentError}
+              onPaymentErrorClick={() =>
+                setFilters((f) => ({ ...f, hasPaymentError: !f.hasPaymentError }))
+              }
+            />
 
-        <SessionsTable
-          sessions={sessions}
-          loading={loading}
-          page={page}
-          setPage={setPage}
-          clarityProjectId={CLARITY_PROJECT_ID}
-          onDeleted={reload}
-        />
+            <FunnelChart
+              funnel={funnel}
+              loading={loading}
+              onStepClick={(stepNumber) =>
+                setFilters((f) => ({ ...f, maxStep: f.maxStep === stepNumber ? undefined : stepNumber }))
+              }
+            />
+
+            <SessionsTable
+              sessions={sessions}
+              loading={loading}
+              page={page}
+              setPage={setPage}
+              clarityProjectId={CLARITY_PROJECT_ID}
+              onDeleted={reload}
+            />
+          </>
+        )}
+
+        {activeTab === "trends" && (
+          <SessionsTrendChart
+            merchants={merchants?.merchants ?? []}
+            from={filters.from}
+            to={filters.to}
+          />
+        )}
+
+        {activeTab === "monthly-growth" && <MonthlyGrowthChart merchants={merchants?.merchants ?? []} />}
       </main>
     </div>
   );

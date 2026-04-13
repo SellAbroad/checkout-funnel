@@ -13,6 +13,18 @@ export default function Filters({ filters, setFilters, merchants, onReload }: Pr
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div>
+        <label className="block text-xs text-gray-400 mb-1">Device Type</label>
+        <select
+          className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[150px]"
+          value={filters.deviceType}
+          onChange={(e) => setFilters({ ...filters, deviceType: e.target.value })}
+        >
+          <option value="mobile">Mobile</option>
+          <option value="desktop">Desktop</option>
+        </select>
+      </div>
+
+      <div>
         <label className="block text-xs text-gray-400 mb-1">Merchant</label>
         <select
           className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[200px]"

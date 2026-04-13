@@ -4,6 +4,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import events from "./routes/events.js";
 import analytics from "./routes/analytics.js";
+import productionAnalytics from "./routes/production-analytics.js";
+import dynamoAnalytics from "./routes/dynamodb-analytics.js";
 
 const app = new Hono();
 
@@ -19,6 +21,8 @@ app.use(
 app.get("/health", (c) => c.json({ status: "ok" }));
 app.route("/events", events);
 app.route("/analytics", analytics);
+app.route("/production-analytics", productionAnalytics);
+app.route("/dynamodb-analytics", dynamoAnalytics);
 
 const port = parseInt(process.env.PORT ?? "3100", 10);
 

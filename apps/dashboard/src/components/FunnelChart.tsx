@@ -12,6 +12,7 @@ import type { FunnelResponse } from "../lib/api";
 interface Props {
   funnel: FunnelResponse | null;
   loading: boolean;
+  onStepClick?: (stepNumber: number) => void;
 }
 
 const COLORS = [
@@ -42,7 +43,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
   );
 }
 
-export default function FunnelChart({ funnel, loading }: Props) {
+export default function FunnelChart({ funnel, loading, onStepClick }: Props) {
   if (loading || !funnel) {
     return (
       <div className="rounded-xl bg-gray-900 border border-gray-800 p-6 h-80 animate-pulse" />
@@ -57,14 +58,32 @@ export default function FunnelChart({ funnel, loading }: Props) {
     );
   }
 
+  const isMobile = funnel.filters?.deviceType === "mobile";
+
   return (
     <div className="rounded-xl bg-gray-900 border border-gray-800 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white">Checkout Funnel</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-white">Checkout Funnel</h2>
+          {isMobile && (
+            <p className="text-xs text-gray-500 mt-1">Mobile view with price dropdown tracking</p>
+          )}
+        </div>
         <span className="text-sm text-gray-400">
           {funnel.totalSessions.toLocaleString()} total sessions
         </span>
       </div>
+
+      {isMobile && funnel.mobileMetrics && (
+        <div className="mb-4 p-3 rounded-lg bg-indigo-950/50 border border-indigo-900">
+          <p className="text-xs text-indigo-300">Key Metric</p>
+          <p className="text-2xl font-bold text-indigo-400 mt-1">
+            {funnel.mobileMetrics.dropdownOpenRate.toFixed(1)}%
+          </p>
+          <p className="text-xs text-indigo-300 mt-1">Price Dropdown Open Rate</p>
+        </div>
+      )}
+
       <ResponsiveContainer width="100%" height={320}>
         <BarChart
           data={funnel.funnel}
@@ -85,7 +104,12 @@ export default function FunnelChart({ funnel, loading }: Props) {
             content={<CustomTooltip />}
             cursor={{ fill: "rgba(255,255,255,0.04)" }}
           />
-          <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+          <Bar
+            dataKey="count"
+            radius={[6, 6, 0, 0]}
+            onClick={(data) => onStepClick?.(data.step)}
+            style={{ cursor: onStepClick ? "pointer" : "default" }}
+          >
             {funnel.funnel.map((_, idx) => (
               <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
             ))}
@@ -104,6 +128,9 @@ export default function FunnelChart({ funnel, loading }: Props) {
               style={{ backgroundColor: COLORS[idx % COLORS.length] }}
             />
             <span>{step.label}</span>
+            <span className="text-gray-500">
+              {step.count.toLocaleString()}
+            </span>
             {step.dropoffRate > 0 && (
               <span className="text-red-400">-{step.dropoffRate}%</span>
             )}

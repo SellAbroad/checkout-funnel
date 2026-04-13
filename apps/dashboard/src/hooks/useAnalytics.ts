@@ -16,6 +16,9 @@ export interface Filters {
   merchantId: string;
   from: string;
   to: string;
+  deviceType: string;
+  hasPaymentError?: boolean;
+  maxStep?: number;
 }
 
 function filtersToParams(filters: Filters): Record<string, string> {
@@ -23,6 +26,9 @@ function filtersToParams(filters: Filters): Record<string, string> {
   if (filters.merchantId) params.merchant_id = filters.merchantId;
   if (filters.from) params.from = filters.from;
   if (filters.to) params.to = filters.to;
+  if (filters.deviceType) params.device_type = filters.deviceType;
+  if (filters.hasPaymentError) params.has_payment_error = "true";
+  if (filters.maxStep !== undefined) params.max_step = String(filters.maxStep);
   return params;
 }
 
@@ -31,6 +37,7 @@ export function useAnalytics() {
     merchantId: "",
     from: "",
     to: "",
+    deviceType: "mobile",
   });
 
   const [funnel, setFunnel] = useState<FunnelResponse | null>(null);

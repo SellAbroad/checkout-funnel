@@ -8,9 +8,14 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "migrate": "tsx src/db/migrate.ts",
-    "seed:demo": "tsx scripts/seed-demo.ts"
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "report:no-address": "node scripts/export-report-no-address.mjs",
+    "report:no-address:all": "node scripts/export-report-no-address.mjs --all",
+    "report:completed-without-address": "node scripts/export-report-no-address.mjs --completed-only"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1027.0",
+    "@aws-sdk/lib-dynamodb": "^3.1027.0",
     "@hono/node-server": "^1.19.12",
     "dotenv": "^16",
     "drizzle-orm": "^0.39",
@@ -21,6 +26,7 @@
     "@types/node": "^22",
     "drizzle-kit": "^0.30",
     "tsx": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "xlsx": "^0.18.5"
   }
 }

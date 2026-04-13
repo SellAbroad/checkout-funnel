@@ -150,6 +150,7 @@ export default function SessionsTable({
           <thead>
             <tr className="text-left text-xs text-gray-500 border-b border-gray-800">
               <th className="px-4 py-3 font-medium">Date</th>
+              <th className="px-4 py-3 font-medium">Merchant</th>
               <th className="px-4 py-3 font-medium">Cart ID</th>
               <th className="px-4 py-3 font-medium">Amount</th>
               <th className="px-4 py-3 font-medium">Country</th>
@@ -168,6 +169,9 @@ export default function SessionsTable({
               >
                 <td className="px-4 py-3 text-gray-300 whitespace-nowrap">
                   {format(new Date(s.createdAt), "MMM dd, HH:mm")}
+                </td>
+                <td className="px-4 py-3 text-gray-400 text-sm max-w-[200px] truncate" title={s.merchantName || s.merchantId}>
+                  {s.merchantName || "-"}
                 </td>
                 <td className="px-4 py-3 text-gray-400 font-mono text-xs">
                   {s.cartId.substring(0, 16)}...

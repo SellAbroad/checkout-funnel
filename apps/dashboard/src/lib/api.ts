@@ -27,17 +27,23 @@ export interface FunnelSideMetrics {
   paymentErrorRate: number;
 }
 
+export interface FunnelMobileMetrics {
+  dropdownOpenRate: number;
+}
+
 export interface FunnelResponse {
   totalSessions: number;
   funnel: FunnelStep[];
   sideMetrics: FunnelSideMetrics;
-  filters: { merchantId: string | null; from: string | null; to: string | null };
+  mobileMetrics: FunnelMobileMetrics | null;
+  filters: { merchantId: string | null; from: string | null; to: string | null; deviceType?: string };
 }
 
 export interface SessionRow {
   id: string;
   cartId: string;
   merchantId: string;
+  merchantName?: string;
   claritySessionId: string | null;
   currencyCode: string | null;
   cartAmountCents: number | null;
@@ -115,4 +121,136 @@ export async function deleteSession(sessionId: string): Promise<void> {
   const url = new URL(`/analytics/sessions/${sessionId}`, API_URL);
   const res = await fetch(url.toString(), { method: "DELETE" });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
+}
+
+export interface SessionsOverTimePoint {
+  date: string;
+  total: number;
+  completed: number;
+}
+
+export interface SessionsOverTimeResponse {
+  data: SessionsOverTimePoint[];
+  timezone: string;
+}
+
+export function fetchSessionsOverTime(params?: Record<string, string>) {
+  return fetchJson<SessionsOverTimeResponse>("/analytics/sessions-over-time", params);
+}
+
+export interface TodayHourPoint {
+  hour: number;
+  total: number;
+  completed: number;
+}
+
+export interface AvgHourPoint {
+  hour: number;
+  avgTotal: number;
+  avgCompleted: number;
+}
+
+export interface TodayHourlyResponse {
+  today: TodayHourPoint[];
+  average: AvgHourPoint[];
+  currentHour: number;
+  timezone: string;
+}
+
+export function fetchTodayHourly(params?: Record<string, string>) {
+  return fetchJson<TodayHourlyResponse>("/analytics/today-hourly", params);
+}
+
+export interface ProductionHourPoint {
+  hour: number;
+  orders: number;
+  gmvUsd: number;
+}
+
+export interface ProductionAvgHourPoint {
+  hour: number;
+  avgOrders: number;
+  avgGmvUsd: number;
+}
+
+export interface ProductionTodayHourlyResponse {
+  today: ProductionHourPoint[];
+  average: ProductionAvgHourPoint[];
+  currentHour: number;
+  timezone: string;
+}
+
+export function fetchProductionTodayHourly(params?: Record<string, string>) {
+  return fetchJson<ProductionTodayHourlyResponse>("/production-analytics/today-hourly", params);
+}
+
+export interface ProductionCartHourPoint {
+  hour: number;
+  total: number;
+  completed: number;
+}
+
+export interface ProductionCartAvgHourPoint {
+  hour: number;
+  avgTotal: number;
+  avgCompleted: number;
+}
+
+export interface ProductionCartsTodayHourlyResponse {
+  today: ProductionCartHourPoint[];
+  average: ProductionCartAvgHourPoint[];
+  currentHour: number;
+  timezone: string;
+}
+
+export function fetchProductionCartsTodayHourly(params?: Record<string, string>) {
+  return fetchJson<ProductionCartsTodayHourlyResponse>("/production-analytics/carts-today-hourly", params);
+}
+
+export interface DynamoTodayHourPoint {
+  hour: number;
+  sessions: number;
+  atc: number;
+  visitors: number;
+}
+
+export interface DynamoAvgHourPoint {
+  hour: number;
+  avgSessions: number;
+  avgAtc: number;
+  avgVisitors: number;
+}
+
+export interface DynamoTodayHourlyResponse {
+  today: DynamoTodayHourPoint[];
+  average: DynamoAvgHourPoint[];
+  currentHour: number;
+  timezone: string;
+}
+
+export function fetchDynamoTodayHourly(params?: Record<string, string>) {
+  return fetchJson<DynamoTodayHourlyResponse>("/dynamodb-analytics/today-hourly", params);
+}
+
+export interface MonthlyGrowthPoint {
+  day: number;
+  previousMonthCumulative: number | null;
+  currentActual: number | null;
+  currentForecast: number | null;
+}
+
+export interface MonthlyGrowthResponse {
+  timezone: string;
+  currentMonthLabel: string;
+  previousMonthLabel: string;
+  todayDayOfMonth: number;
+  daysInCurrentMonth: number;
+  daysInPreviousMonth: number;
+  dailyAvgUsd: number;
+  cumulativeToDateUsd: number;
+  points: MonthlyGrowthPoint[];
+}
+
+export function fetchMonthlyGrowth(params?: Record<string, string>) {
+  return fetchJson<MonthlyGrowthResponse>("/production-analytics/monthly-growth", params);
 }
