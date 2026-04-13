@@ -2,6 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import type { SessionsResponse, SessionEvent } from "../lib/api";
 import { fetchSessionEvents, deleteSession } from "../lib/api";
+import { getMerchantName } from "../lib/merchants-map";
 
 interface Props {
   sessions: SessionsResponse | null;
@@ -170,8 +171,8 @@ export default function SessionsTable({
                 <td className="px-4 py-3 text-gray-300 whitespace-nowrap">
                   {format(new Date(s.createdAt), "MMM dd, HH:mm")}
                 </td>
-                <td className="px-4 py-3 text-gray-400 text-sm max-w-[200px] truncate" title={s.merchantName || s.merchantId}>
-                  {s.merchantName || "-"}
+                <td className="px-4 py-3 text-gray-400 text-sm max-w-[200px] truncate" title={getMerchantName(s.merchantId)}>
+                  {getMerchantName(s.merchantId)}
                 </td>
                 <td className="px-4 py-3 text-gray-400 font-mono text-xs">
                   {s.cartId.substring(0, 16)}...

@@ -156,22 +156,11 @@ analytics.get("/sessions", async (c) => {
       .where(whereClause),
   ]);
 
-  // Enrich with merchant names — extract from shopUrl as fallback
-  const enrichedSessions = sessions.map((s) => {
-    let merchantName: string | undefined;
-
-    // Try to extract store name from shopUrl (e.g., "sellabroadtest.myshopify.com" → "sellabroadtest")
-    if (s.shopUrl) {
-      const match = s.shopUrl.match(/^([^.]+)\./);
-      merchantName = match ? match[1] : s.shopUrl;
-    }
-
-    return {
-      ...s,
-      maxStepLabel: STEP_LABELS[s.maxStepReached] ?? `Step ${s.maxStepReached}`,
-      merchantName,
-    };
-  });
+  // Enrich with step labels
+  const enrichedSessions = sessions.map((s) => ({
+    ...s,
+    maxStepLabel: STEP_LABELS[s.maxStepReached] ?? `Step ${s.maxStepReached}`,
+  }));
 
   return c.json({
     sessions: enrichedSessions,

@@ -20,12 +20,12 @@ export const orderInfo = pgTable("order_info", {
 
 export const shopifyStore = pgTable("shopify_store", {
   id: text("id").primaryKey(),
-  merchantId: text("merchant_id"),
-  storeName: text("store_name"),
+  merchantId: text("merchant_id").notNull(),
+  storeName: text("store_name").notNull(),
 });
 
 export const woocommerceStore = pgTable("woocommerce_store", {
   id: text("id").primaryKey(),
-  merchantId: text("merchant_id"),
-  storeName: text("store_name"),
+  merchantId: text("merchant_id").notNull(),
+  storeName: text("store_name").notNull(),
 });

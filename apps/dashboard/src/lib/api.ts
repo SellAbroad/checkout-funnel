@@ -43,7 +43,6 @@ export interface SessionRow {
   id: string;
   cartId: string;
   merchantId: string;
-  merchantName?: string;
   claritySessionId: string | null;
   currencyCode: string | null;
   cartAmountCents: number | null;
