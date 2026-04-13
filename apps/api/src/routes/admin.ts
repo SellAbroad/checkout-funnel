@@ -2,16 +2,17 @@ import { Hono } from "hono";
 import { exec } from "child_process";
 import { promisify } from "util";
 import path from "path";
+import { fileURLToPath } from "url";
 
 const execPromise = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const admin = new Hono();
 
 admin.post("/update-merchants", async (c) => {
   try {
-    const dashboardDir = path.resolve(
-      import.meta.url,
-      "../../../dashboard"
-    ).replace("file://", "");
+    const dashboardDir = path.resolve(__dirname, "../../../dashboard");
 
     const scriptPath = path.join(dashboardDir, "scripts/update-merchants-map.mjs");
 
