@@ -156,49 +156,22 @@ analytics.get("/sessions", async (c) => {
       .where(whereClause),
   ]);
 
-  // Enrich with merchant names from production DB if available
-  let enrichedSessions = sessions.map((s) => ({
-    ...s,
-    maxStepLabel: STEP_LABELS[s.maxStepReached] ?? `Step ${s.maxStepReached}`,
-    merchantName: undefined as string | undefined,
-  }));
+  // Enrich with merchant names — extract from shopUrl as fallback
+  const enrichedSessions = sessions.map((s) => {
+    let merchantName: string | undefined;
 
-  if (productionDb && enrichedSessions.length > 0) {
-    try {
-      const merchantIds = [...new Set(enrichedSessions.map((s) => s.merchantId))];
-
-      // Get merchant names from both shopify_store and woocommerce_store
-      const [shopifyNames, woocommerceNames] = await Promise.all([
-        productionDb
-          .select({ merchantId: shopifyStore.merchantId, storeName: shopifyStore.storeName })
-          .from(shopifyStore)
-          .where(inArray(shopifyStore.merchantId, merchantIds))
-          .catch(() => []),
-        productionDb
-          .select({ merchantId: woocommerceStore.merchantId, storeName: woocommerceStore.storeName })
-          .from(woocommerceStore)
-          .where(inArray(woocommerceStore.merchantId, merchantIds))
-          .catch(() => []),
-      ]);
-
-      // Merge both lists (shopify takes precedence if both exist)
-      const nameMap = new Map<string, string>();
-      if (Array.isArray(woocommerceNames)) {
-        woocommerceNames.forEach((row: any) => nameMap.set(row.merchant_id, row.store_name));
-      }
-      if (Array.isArray(shopifyNames)) {
-        shopifyNames.forEach((row: any) => nameMap.set(row.merchant_id, row.store_name));
-      }
-
-      enrichedSessions = enrichedSessions.map((s) => ({
-        ...s,
-        merchantName: nameMap.get(s.merchantId),
-      }));
-    } catch (error) {
-      console.error("Failed to fetch merchant names from production DB:", error);
-      // Continue without merchant names if lookup fails
+    // Try to extract store name from shopUrl (e.g., "sellabroadtest.myshopify.com" → "sellabroadtest")
+    if (s.shopUrl) {
+      const match = s.shopUrl.match(/^([^.]+)\./);
+      merchantName = match ? match[1] : s.shopUrl;
     }
-  }
+
+    return {
+      ...s,
+      maxStepLabel: STEP_LABELS[s.maxStepReached] ?? `Step ${s.maxStepReached}`,
+      merchantName,
+    };
+  });
 
   return c.json({
     sessions: enrichedSessions,
