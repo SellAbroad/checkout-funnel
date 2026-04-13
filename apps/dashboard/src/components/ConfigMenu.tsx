@@ -11,7 +11,7 @@ export default function ConfigMenu() {
     setMessage(null);
 
     try {
-      const url = new URL("/admin/update-merchants", API_URL);
+      const url = new URL("/api/admin/update-merchants", API_URL);
       const response = await fetch(url.toString(), {
         method: "POST",
       });
