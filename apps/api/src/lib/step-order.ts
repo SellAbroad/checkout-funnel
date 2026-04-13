@@ -15,7 +15,6 @@ export const STEP_ORDER: Record<string, number> = {
   sa_checkout_pay_clicked: 8,
   sa_checkout_payment_error: 8,
   sa_checkout_completed: 9,
-  sa_checkout_price_dropdown_opened: 3,
   sa_checkout_order_summary_toggled: 3,
 };
 
@@ -53,11 +52,11 @@ export const FUNNEL_DEFINITION: FunnelStepDef[] = [
   { key: "completed",        eventName: "sa_checkout_completed",        label: "Completed" },
 ];
 
-// Mobile funnel - includes price dropdown interaction
+// Mobile funnel - includes order summary interaction
 export const FUNNEL_DEFINITION_MOBILE: FunnelStepDef[] = [
   { key: "loaded",                  eventName: "sa_checkout_loaded",                  label: "Checkout Loaded" },
   { key: "shipping_shown",          eventName: "sa_checkout_shipping_shown",          label: "Shipping Shown" },
-  { key: "price_dropdown_opened",   eventName: "sa_checkout_price_dropdown_opened",   label: "Price Dropdown Opened" },
+  { key: "order_summary_toggled",   eventName: "sa_checkout_order_summary_toggled",   label: "Order Summary Toggled" },
   { key: "address_focused",         eventName: "sa_checkout_address_focused",         label: "Address Focused" },
   { key: "address_selected",        eventName: "sa_checkout_address_selected",        label: "Address Selected" },
   { key: "pay_clicked",             eventName: "sa_checkout_pay_clicked",             label: "Pay Clicked" },
